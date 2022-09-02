@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for opm.
 GH_REPO="https://github.com/operator-framework/operator-registry"
 TOOL_NAME="opm"
 TOOL_TEST="opm --help"
@@ -14,7 +13,6 @@ fail() {
 
 curl_opts=(-fsSL)
 
-# NOTE: You might want to remove this if opm is not hosted on GitHub releases.
 if [ -n "${GITHUB_API_TOKEN:-}" ]; then
   curl_opts=("${curl_opts[@]}" -H "Authorization: token $GITHUB_API_TOKEN")
 fi
@@ -27,25 +25,51 @@ sort_versions() {
 list_github_tags() {
   git ls-remote --tags --refs "$GH_REPO" |
     grep -o 'refs/tags/.*' | cut -d/ -f3- |
-    sed 's/^v//' # NOTE: You might want to adapt this sed to remove non-version strings from tags
+    sed 's/^v//'
 }
 
 list_all_versions() {
-  # TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-  # Change this function if opm has other means of determining installable versions.
   list_github_tags
 }
 
+get_platform() {
+  local platform
+  platform="$(uname -s)"
+  #Convert to lowercase
+  platform="${platform,,}"
+  #Some environments expose version among hardvare platform (e.g. MINGW32_NT-6.1)
+  #So check only prefix
+  case "${platform}" in
+    linux*|mingw*|cygwin*) echo linux;;
+    darwin*) echo darwin;;
+    *) echo "unsupported_platform_${platform}";;
+  esac
+}
+
+get_arch() {
+  local arch
+  arch="$(uname -m)"
+  arch="${arch,,}"
+  case "${arch}" in
+    x86_64) echo amd64;;
+    arm64) echo arm64;;
+    s390x) echo s390x;;
+    ppc64le) echo ppc64le;;
+    *) echo "unsupported_arch_${arch}";;
+  esac
+}
+
 download_release() {
-  local version filename url
+  local version filename url platform arch
   version="$1"
   filename="$2"
+  platform="$(get_platform)"
+  arch="$(get_arch)"
 
-  # TODO: Adapt the release URL convention for opm
-  url="$GH_REPO/archive/v${version}.tar.gz"
+  url="$GH_REPO/releases/download/v${version}/${platform}-${arch}-opm"
 
-  echo "* Downloading $TOOL_NAME release $version..."
-  curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
+  echo "* Downloading $TOOL_NAME release $version for platform ${platform} (${arch})..."
+  curl "${curl_opts[@]}" -o "$filename" -- "$url" || fail "Could not download $url"
 }
 
 install_version() {
@@ -61,7 +85,6 @@ install_version() {
     mkdir -p "$install_path"
     cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
-    # TODO: Asert opm executable exists.
     local tool_cmd
     tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
     test -x "$install_path/bin/$tool_cmd" || fail "Expected $install_path/bin/$tool_cmd to be executable."
