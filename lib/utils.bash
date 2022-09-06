@@ -34,10 +34,8 @@ list_all_versions() {
 
 get_platform() {
   local platform
-  platform="$(uname -s)"
-  #Convert to lowercase
-  platform="${platform,,}"
-  #Some environments expose version among hardvare platform (e.g. MINGW32_NT-6.1)
+  platform="$(uname -s | tr '[:upper:]' '[:lower:]')"
+  #Some environments expose version among OS platform (e.g. MINGW32_NT-6.1)
   #So check only prefix
   case "${platform}" in
     linux*|mingw*|cygwin*) echo linux;;
@@ -48,8 +46,7 @@ get_platform() {
 
 get_arch() {
   local arch
-  arch="$(uname -m)"
-  arch="${arch,,}"
+  arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
   case "${arch}" in
     x86_64) echo amd64;;
     arm64) echo arm64;;
