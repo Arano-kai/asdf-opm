@@ -45,6 +45,8 @@ asdf global opm latest
 opm --help
 ```
 
+**NOTE**: versions with prefix `openshift-` are intended to use with corresponding OKD/OpenShift and distributed by RedHad.
+
 Check [asdf](https://github.com/asdf-vm/asdf) readme for more instructions on how to
 install & manage versions.
 
