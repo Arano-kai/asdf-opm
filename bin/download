@@ -16,4 +16,3 @@ download_release "$ASDF_INSTALL_VERSION" "$release_file"
 
 # Make it executable
 chmod +x "${release_file}"
-
